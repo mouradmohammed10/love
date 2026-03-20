@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🌙</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body {
+  width:100%; height:100%;
+  background:#060408;
+  font-family:'Tajawal',sans-serif;
+  overflow:hidden;
+  position:fixed;
+  touch-action:none;
+  user-select:none;
+}
+canvas#bg { position:fixed; inset:0; z-index:0; }
+
+/* SCREENS */
+.scr {
+  position:fixed; inset:0; z-index:10;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  padding:28px; opacity:0; pointer-events:none;
+  transition:opacity 0.7s ease;
+}
+.scr.on { opacity:1; pointer-events:all; }
+
+/* INTRO */
+.i-moon { font-size:58px; display:block; margin-bottom:14px;
+  filter:drop-shadow(0 0 24px rgba(212,168,67,0.9));
+  animation:fl 3s ease-in-out infinite; }
+@keyframes fl { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+.i-name {
+  font-size:clamp(44px,13vw,72px); font-weight:900;
+  background:linear-gradient(135deg,#d4a843,#f0cc70,#fffbe8,#f0cc70,#d4a843);
+  background-size:200%; -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:sh 3s ease-in-out infinite; letter-spacing:6px; margin-bottom:10px; display:block;
+}
+@keyframes sh { 0%,100%{background-position:0%} 50%{background-position:100%} }
+.i-sub { color:rgba(212,168,67,0.45); font-size:13px; letter-spacing:2px;
+  margin-bottom:40px; text-align:center; display:block; line-height:2; }
+.gbtn {
+  background:transparent; border:1px solid rgba(212,168,67,0.4);
+  color:#d4a843; border-radius:99px; padding:14px 44px;
+  font-family:'Tajawal',sans-serif; font-size:16px; font-weight:700; letter-spacing:2px;
+  cursor:pointer; animation:gl 2s ease-in-out infinite;
+  -webkit-tap-highlight-color:transparent;
+}
+@keyframes gl { 0%,100%{box-shadow:0 0 8px rgba(212,168,67,0.15)} 50%{box-shadow:0 0 24px rgba(212,168,67,0.5)} }
+
+/* GAME */
+#s-game { gap:12px; padding:16px; }
+.g-title { color:rgba(212,168,67,0.55); font-size:11px; letter-spacing:3px; text-align:center; }
+#drawCanvas {
+  border-radius:20px;
+  border:1px solid rgba(212,168,67,0.2);
+  box-shadow:0 0 40px rgba(0,0,0,0.8), 0 0 16px rgba(212,168,67,0.06);
+  touch-action:none; display:block;
+}
+.g-hint { color:rgba(255,255,255,0.22); font-size:11px; letter-spacing:1px; text-align:center; line-height:1.9; }
+#result-msg { font-size:15px; font-weight:700; letter-spacing:1px; text-align:center; min-height:24px; }
+.try-btn {
+  background:transparent; border:1px solid rgba(212,168,67,0.3);
+  color:rgba(212,168,67,0.7); border-radius:99px; padding:10px 30px;
+  font-family:'Tajawal',sans-serif; font-size:13px; font-weight:700; letter-spacing:2px;
+  cursor:pointer; display:none; -webkit-tap-highlight-color:transparent;
+}
+
+/* WIN — full scrollable */
+#s-win {
+  position:fixed; inset:0; z-index:10;
+  opacity:0; pointer-events:none;
+  transition:opacity 0.7s ease;
+  overflow-y:scroll;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+  display:block;
+  padding:40px 20px 80px;
+}
+#s-win.on { opacity:1; pointer-events:all; }
+#s-win-inner {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-height:100%;
+}
+
+.win-card {
+  width:min(380px,92vw);
+  background:linear-gradient(145deg,#0f0a1a,#1a1230,#0f0a1a);
+  border-radius:28px; padding:36px 26px 36px;
+  position:relative; overflow:hidden; text-align:center;
+  box-shadow:0 0 0 1px rgba(212,168,67,0.18),0 30px 80px rgba(0,0,0,0.9),0 0 60px rgba(212,168,67,0.08);
+}
+.win-card::before { content:''; position:absolute; inset:9px; border-radius:20px; border:1px solid rgba(212,168,67,0.09); pointer-events:none; }
+.w-moon { font-size:52px; display:block; margin-bottom:12px; filter:drop-shadow(0 0 20px rgba(212,168,67,0.8)); animation:fl 3s ease-in-out infinite; }
+.w-title { font-size:clamp(17px,5vw,22px); font-weight:900; display:block;
+  background:linear-gradient(135deg,#d4a843,#f0cc70,#fffbe8,#f0cc70,#d4a843);
+  background-size:200%; -webkit-background-clip:text; background-clip:text; color:transparent;
+  animation:sh 3s ease-in-out infinite; letter-spacing:2px; margin-bottom:22px; }
+.w-p { font-size:14.5px; line-height:2.15; color:rgba(255,255,255,0.82); text-align:right; margin-bottom:14px; }
+.w-p em { font-style:normal; color:#f0cc70; font-weight:700; }
+.w-div { height:1px; width:55%; background:linear-gradient(to right,transparent,rgba(212,168,67,0.3),transparent); margin:18px auto; }
+.w-hearts { display:flex; justify-content:center; gap:12px; font-size:22px; margin-top:20px; }
+.w-hearts span { animation:fl 2s ease-in-out infinite; display:inline-block; }
+.w-hearts span:nth-child(2){ animation-delay:.3s; font-size:30px; }
+.w-hearts span:nth-child(3){ animation-delay:.6s; }
+
+.pt { position:fixed; pointer-events:none; font-size:16px; z-index:999; animation:ptup 1.1s ease forwards; }
+@keyframes ptup { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-90px) scale(1.2)} }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+
+<!-- INTRO -->
+<div class="scr on" id="s-intro">
+  <span class="i-moon">🌙</span>
+  <span class="i-name">مريم</span>
+  <span class="i-sub">في رسالة مخبية..<br>ارسمي قلب بإصبعك عشان تفتحيها 💛</span>
+  <button class="gbtn" id="startBtn">✦ ابدأي ✦</button>
+</div>
+
+<!-- GAME -->
+<div class="scr" id="s-game">
+  <div class="g-title">✦ ارسمي قلب بإصبعك ✦</div>
+  <canvas id="drawCanvas"></canvas>
+  <div class="g-hint">اتبعي الشكل الباهت.. ابدأي من النقطة ↓</div>
+  <div id="result-msg"></div>
+  <button class="try-btn" id="tryBtn">حاولي تاني ↺</button>
+</div>
+
+<!-- WIN -->
+<div id="s-win">
+  <div id="s-win-inner">
+    <div class="win-card">
+      <span class="w-moon">🌙</span>
+      <span class="w-title">كل عيد وإنتي عيدي 💛</span>
+      <p class="w-p">كل عيد وإنتي العيد في قلبي، قبل ما الناس تعايد بعضها حبيت أقولك إنك <em>أجمل أقداري.</em></p>
+      <p class="w-p">وجودك هو اللي بيخلي لأيامي طعم وللعيد فرحة.. <em>إنتي عيدي وكل دنيتي.</em> 🥹</p>
+      <div class="w-div"></div>
+      <p class="w-p">ده العيد التالت لينا مع بعض، مش عارف الأيام بتجري إزاي.. بس اللي عارفه إن <em>مكانتك في قلبي بتزيد كل يوم.</em></p>
+      <p class="w-p">شكراً إنك لسة جنبي. يا رب يكتب لينا العمر كله سوا ونحتفل بالعيد الـ٣٠ والـ١٠٠ <em>وإحنا لسة بنحب بعض بنفس اللهفة.</em> 🥹♥️</p>
+      <div class="w-div"></div>
+      <p class="w-p" style="text-align:center"><em>ضحكتك هي العيد الحقيقي بالنسبالي.</em> 🫂</p>
+      <div class="w-hearts"><span>🤍</span><span>💛</span><span>🤍</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// BG
+const bgC=document.getElementById('bg'),bgX=bgC.getContext('2d');
+let W,H;
+const stars=[];
+function rsz(){ W=bgC.width=window.innerWidth; H=bgC.height=window.innerHeight; }
+rsz(); window.addEventListener('resize',rsz);
+for(let i=0;i<200;i++) stars.push({x:Math.random(),y:Math.random(),r:Math.random()*1.3+0.2,a:Math.random(),da:(Math.random()*.005+.002)*(Math.random()<.5?1:-1),gold:Math.random()<.15});
+(function loop(){
+  const g=bgX.createRadialGradient(W*.5,0,0,W*.5,H,H);
+  g.addColorStop(0,'#0d0820');g.addColorStop(.6,'#070510');g.addColorStop(1,'#030208');
+  bgX.fillStyle=g;bgX.fillRect(0,0,W,H);
+  stars.forEach(s=>{
+    s.a=Math.max(.04,Math.min(1,s.a+s.da));
+    if(s.a<=.04||s.a>=1)s.da*=-1;
+    bgX.beginPath();bgX.arc(s.x*W,s.y*H,s.r,0,Math.PI*2);
+    bgX.fillStyle=s.gold?`rgba(212,168,67,${s.a*.7})`:`rgba(255,255,255,${s.a*.5})`;
+    bgX.fill();
+  });
+  requestAnimationFrame(loop);
+})();
+
+// SCREENS
+function show(id){
+  document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+  const el=document.getElementById(id);
+  if(el) el.classList.add('on');
+}
+
+// DRAW
+const dc=document.getElementById('drawCanvas'),dx=dc.getContext('2d');
+let drawing=false, points=[], canDraw=true, SZ=0;
+
+function initCanvas(){
+  const avH=window.innerHeight-220;
+  const avW=window.innerWidth-40;
+  SZ=Math.floor(Math.min(avW,avH,300));
+  dc.width=dc.height=SZ;
+  clearCanvas();
+}
+
+function clearCanvas(){
+  dx.fillStyle='#08050f';
+  dx.fillRect(0,0,SZ,SZ);
+  drawGuide();
+}
+
+function drawGuide(){
+  const cx=SZ/2, cy=SZ*0.52, s=SZ*0.3;
+  dx.save();
+  dx.strokeStyle='rgba(212,168,67,0.13)';
+  dx.lineWidth=1.5; dx.setLineDash([4,6]);
+  dx.beginPath();
+  dx.moveTo(cx,cy+s*0.9);
+  dx.bezierCurveTo(cx-s*1.15,cy+s*0.15,cx-s*1.15,cy-s*0.85,cx,cy-s*0.25);
+  dx.bezierCurveTo(cx+s*1.15,cy-s*0.85,cx+s*1.15,cy+s*0.15,cx,cy+s*0.9);
+  dx.stroke();
+  dx.restore();
+  // start dot
+  dx.beginPath();
+  dx.arc(cx,cy+s*0.9,5,0,Math.PI*2);
+  dx.fillStyle='rgba(212,168,67,0.35)';dx.fill();
+}
+
+function getPos(e){
+  const r=dc.getBoundingClientRect();
+  if(e.touches) return {x:e.touches[0].clientX-r.left, y:e.touches[0].clientY-r.top};
+  return {x:e.clientX-r.left, y:e.clientY-r.top};
+}
+
+function redraw(){
+  clearCanvas();
+  if(points.length<2) return;
+  dx.save();
+  dx.strokeStyle='rgba(212,168,67,0.88)';
+  dx.lineWidth=3; dx.lineCap='round'; dx.lineJoin='round';
+  dx.shadowColor='rgba(212,168,67,0.55)'; dx.shadowBlur=8;
+  dx.beginPath(); dx.moveTo(points[0].x,points[0].y);
+  for(let i=1;i<points.length;i++) dx.lineTo(points[i].x,points[i].y);
+  dx.stroke(); dx.restore();
+}
+
+dc.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  if(!canDraw) return;
+  drawing=true; points=[getPos(e)];
+},{passive:false});
+
+dc.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(!drawing||!canDraw) return;
+  points.push(getPos(e)); redraw();
+},{passive:false});
+
+dc.addEventListener('touchend',e=>{
+  e.preventDefault();
+  if(!drawing) return;
+  drawing=false;
+  if(points.length>12) analyze();
+},{passive:false});
+
+dc.addEventListener('mousedown',e=>{ if(!canDraw) return; drawing=true; points=[getPos(e)]; });
+dc.addEventListener('mousemove',e=>{ if(!drawing||!canDraw) return; points.push(getPos(e)); redraw(); });
+dc.addEventListener('mouseup',()=>{ if(!drawing) return; drawing=false; if(points.length>12) analyze(); });
+
+function analyze(){
+  canDraw=false;
+  const res=document.getElementById('result-msg');
+  const tryBtn=document.getElementById('tryBtn');
+  if(isHeart(points)){
+    res.style.color='#f0cc70';
+    res.textContent='💛 القلب وصل!';
+    drawGoldHeart();
+    spawnPt(W/2,H/2,12);
+    setTimeout(()=>{
+      for(let i=0;i<18;i++) setTimeout(()=>spawnPt(W/2,H/2,4),i*70);
+      // show win
+      document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
+      const win=document.getElementById('s-win');
+      win.classList.add('on');
+      win.scrollTop=0;
+      canDraw=true;
+    },1800);
+  } else {
+    res.style.color='rgba(220,80,80,0.85)';
+    res.textContent='مش قلب.. حاولي تاني 😅';
+    tryBtn.style.display='block';
+  }
+}
+
+function drawGoldHeart(){
+  const cx=SZ/2,cy=SZ*0.52,s=SZ*0.3;
+  dx.save();
+  const grad=dx.createRadialGradient(cx,cy,0,cx,cy,s*1.4);
+  grad.addColorStop(0,'rgba(255,248,180,0.6)');
+  grad.addColorStop(1,'rgba(212,168,67,0)');
+  dx.fillStyle=grad; dx.fillRect(0,0,SZ,SZ);
+  dx.font=`${SZ*0.28}px serif`;
+  dx.textAlign='center'; dx.textBaseline='middle';
+  dx.fillText('💛',cx,cy);
+  dx.restore();
+}
+
+function isHeart(pts){
+  if(pts.length<15) return false;
+  const xs=pts.map(p=>p.x),ys=pts.map(p=>p.y);
+  const minX=Math.min(...xs),maxX=Math.max(...xs);
+  const minY=Math.min(...ys),maxY=Math.max(...ys);
+  const bw=maxX-minX, bh=maxY-minY;
+  if(bw<SZ*0.2||bh<SZ*0.2) return false;
+  const ratio=bw/bh;
+  if(ratio<0.4||ratio>2.6) return false;
+  const cx=(minX+maxX)/2, cy=(minY+maxY)/2;
+  // top dip check
+  const topPts=pts.filter(p=>p.y<cy);
+  const hasLeft=topPts.some(p=>p.x<cx-bw*0.15);
+  const hasRight=topPts.some(p=>p.x>cx+bw*0.15);
+  // bottom point check
+  const botPts=pts.filter(p=>p.y>minY+bh*0.7);
+  const botSpread=botPts.length>0?(Math.max(...botPts.map(p=>p.x))-Math.min(...botPts.map(p=>p.x)))/bw:1;
+  // closed check
+  const dist=Math.hypot(pts[pts.length-1].x-pts[0].x,pts[pts.length-1].y-pts[0].y);
+  const closed=dist<Math.max(bw,bh)*0.5;
+  let score=0;
+  if(hasLeft&&hasRight) score+=2;
+  if(botSpread<0.65) score+=1;
+  if(closed) score+=1;
+  if(pts.length>25) score+=1;
+  return score>=3;
+}
+
+document.getElementById('tryBtn').addEventListener('click',reset);
+document.getElementById('tryBtn').addEventListener('touchend',e=>{e.preventDefault();reset();},{passive:false});
+
+function reset(){
+  points=[]; canDraw=true; drawing=false;
+  document.getElementById('result-msg').textContent='';
+  document.getElementById('tryBtn').style.display='none';
+  clearCanvas();
+}
+
+function startGame(){
+  initCanvas();
+  show('s-game');
+}
+document.getElementById('startBtn').addEventListener('click',startGame);
+document.getElementById('startBtn').addEventListener('touchend',e=>{e.preventDefault();startGame();},{passive:false});
+
+// prevent scroll on game, allow on win
+document.addEventListener('touchmove',e=>{
+  const win=document.getElementById('s-win');
+  if(win.classList.contains('on')) return;
+  e.preventDefault();
+},{passive:false});
+
+// particles
+const pE=['✨','🌙','💛','⭐','🤍','💗'];
+function spawnPt(cx,cy,n=3){
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div'); p.className='pt';
+    p.textContent=pE[Math.floor(Math.random()*pE.length)];
+    p.style.left=(cx-10+(Math.random()-.5)*80)+'px';
+    p.style.top=(cy-10+(Math.random()-.5)*40)+'px';
+    p.style.animationDuration=(0.8+Math.random()*.6)+'s';
+    document.body.appendChild(p); setTimeout(()=>p.remove(),1400);
+  }
+}
+document.addEventListener('click',e=>spawnPt(e.clientX,e.clientY,2));
+</script>
+</body>
+</html>
